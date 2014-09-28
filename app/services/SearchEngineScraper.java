@@ -1,0 +1,90 @@
+package services;
+
+
+import domain.SearchResult;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import play.libs.F.Promise;
+import play.libs.F.Function;
+import play.libs.ws.WSResponse;
+
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
+import java.util.ArrayList;
+import java.util.List;
+
+@Named
+@Singleton
+public class SearchEngineScraper {
+
+    private final WSRequester requester;
+
+    @Inject
+    public SearchEngineScraper(final WSRequester requester) {
+        this.requester = requester;
+    }
+
+    protected enum SearchEngine {
+        GOOGLE("http://www.google.com/search?output=search&q=", "#search li.g > h3.r"),
+        YAHOO("http://search.yahoo.com/search?p=", "ol li div.res div h3 a"),
+        BING("https://www.bing.com/search?q=", "#b_results li.b_algo h2 a");
+
+        private String selector;
+        private String url;
+        SearchEngine(String url, String selector) {
+            this.url = url;
+            this.selector = selector;
+        }
+
+        public String getUrl() {
+            return url;
+        }
+    }
+
+    public Promise<List<SearchResult>> scrape(String searchTerms) {
+
+        final Promise<List<SearchResult>> googleSearchResults = search(searchTerms, SearchEngine.GOOGLE);
+        final Promise<List<SearchResult>> bingSearchResults = search(searchTerms, SearchEngine.BING);
+        final Promise<List<SearchResult>> yahooSearchResults = search(searchTerms, SearchEngine.YAHOO);
+
+        //convert these results to JSON and add to result.
+        Promise<List<List<SearchResult>>> combinedPromise = Promise.sequence(googleSearchResults, bingSearchResults, yahooSearchResults);
+
+
+        return combinedPromise.map(new Function<List<List<SearchResult>>, List<SearchResult>>() {
+            public List<SearchResult> apply(List<List<SearchResult>> results) {
+                List<SearchResult> flattened = new ArrayList();
+                for (List<SearchResult> r : results) {
+                    flattened.addAll(r);
+                }
+                return flattened;
+            }
+        });
+    }
+
+    public Promise<List<SearchResult>> search(String searchTerms, final SearchEngine engine) {
+        Promise<WSResponse> response = requester.get(searchTerms, engine.url);
+        Promise<List<SearchResult>> result = response.map(
+                new Function<WSResponse, List<SearchResult>>() {
+                    public List<SearchResult> apply(WSResponse response) {
+                        Document doc = Jsoup.parse(response.getBody());
+                        Elements results = doc.select(engine.selector);
+                        return buildResultList(results);
+                    }
+                }
+        );
+        return result;
+    }
+
+    private List<SearchResult> buildResultList(Elements results) {
+        List<SearchResult> parsedResults = new ArrayList();
+        for (Element result : results) {
+            SearchResult sr = new SearchResult(result.select("a").text(), result.select("a").attr("href"));
+            parsedResults.add(sr);
+        }
+        return parsedResults;
+    }
+}
