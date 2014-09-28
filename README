@@ -1,4 +1,8 @@
-This is your new Play application
+Welcome to the Search Engine Aggregator
 =================================
 
-This file will be packaged with your application, when using `activator dist`.
+This search aggregator project combines the search results of three top search engines: Google, Yahoo and Bing.
+
+To run a query, simply invoke this web service like so: http://localhost:9000/search/<your search term here>
+
+The returned result will be a JSON array of search result titles and their corresponding URLs.

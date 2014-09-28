@@ -7,6 +7,9 @@ import play.libs.ws.WSResponse;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
+/**
+ * A wrapper class around the Play WS service - so that we can mock out the WS class for unit testing.
+ */
 @Named
 @Singleton
 public class WSRequester {

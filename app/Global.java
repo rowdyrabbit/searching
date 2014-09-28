@@ -2,6 +2,9 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import play.Application;
 import play.GlobalSettings;
 
+/**
+ * The global settings object - responsible for setting up the Spring DI context.
+ */
 public class Global extends GlobalSettings {
 
     /**
