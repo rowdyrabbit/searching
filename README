@@ -6,3 +6,9 @@ This search aggregator project combines the search results of three top search e
 To run a query, simply invoke this web service like so: http://localhost:9000/search/<your search term here>
 
 The returned result will be a JSON array of search result titles and their corresponding URLs.
+
+To run this application:
+
+1. To run the activator shell script, you will need to make it executable, so run: chmod +x activator
+3. Run: activator run
+4. Activator should now download all the required dependencies and start the application when it's done.
